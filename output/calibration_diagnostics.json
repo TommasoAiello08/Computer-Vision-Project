@@ -1,0 +1,49 @@
+{
+  "image_folders": [
+    "Old_photos",
+    "Photos2",
+    "."
+  ],
+  "num_candidate_images": 14,
+  "chosen_checkerboard": [
+    14,
+    14
+  ],
+  "pattern_hits": {
+    "14x14": 0,
+    "13x13": 0,
+    "12x12": 0,
+    "11x11": 0,
+    "10x10": 0,
+    "9x9": 0,
+    "8x8": 0,
+    "7x7": 0,
+    "10x7": 0,
+    "9x6": 0,
+    "8x6": 0,
+    "7x6": 0,
+    "11x8": 0,
+    "10x8": 0
+  },
+  "num_valid_views": 0,
+  "used_images": [],
+  "rejected_images": [
+    "Old_photos/IMG_6940.jpeg",
+    "Old_photos/IMG_6941.jpeg",
+    "Old_photos/IMG_6942.jpeg",
+    "Old_photos/IMG_6943.jpeg",
+    "Old_photos/IMG_6944.jpeg",
+    "Old_photos/IMG_6945.jpeg",
+    "Old_photos/IMG_6946.jpeg",
+    "Old_photos/IMG_6947.jpeg",
+    "Old_photos/IMG_6948.jpeg",
+    "Old_photos/IMG_6949.jpeg",
+    "Photos2/WhatsApp Image 2026-03-02 at 12.40.31 (1).jpeg",
+    "Photos2/WhatsApp Image 2026-03-02 at 12.40.31 (2).jpeg",
+    "Photos2/WhatsApp Image 2026-03-02 at 12.40.31.jpeg",
+    "Photos2/WhatsApp Image 2026-03-02 at 12.40.32.jpeg"
+  ],
+  "methods_used": {},
+  "status": "failed",
+  "reason": "Not enough valid checkerboard views: 0 found, need at least 3."
+}

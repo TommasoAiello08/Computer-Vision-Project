@@ -1,0 +1,34 @@
+1) Image acquisition
+Acquire two images of a 3D scene using the same camera.
+You are encouraged to use the following structure near the campus.
+2) Camera calibration (1 pts)
+Print a checkerboard pattern and use the OpenCV library to estimate the intrinsic parameters of your
+camera.
+You should:
+• Capture multiple images of the checkerboard from different viewpoints.
+• Estimate the intrinsic calibration matrix.
+• Use the estimated intrinsic matrix in the following parts of the assignment.
+In the report decribe the algorihtm used.
+2) The eight point algorithm for essential matrix estimation (4 pts)
+Implement the eight-point algorithm to estimate the essential matrix and test it on the pair of images you
+have captured.
+You may:
+• Use SIFT with robust fitting (e.g., RANSAC) to extract correspondences, or
+• Manually annotate correspondences.
+Requirements:
+• Use your own implementation of the eight-point algorithm.
+• Adapt the algorithm to calibrated images by using the camera calibration matrix estimated in the
+previous step.
+• Visualize the results by plotting all epipolar lines in the first image.
+• Use a geometric error (e.g., epipolar constraint error or Sampson distance) to evaluate how well the
+estimated matrix models the epipolar geometry.
+• Compare your results with the five-point algorithm provided in OpenCV.
+Provide enough visualizations and carefully describe all the steps. Comments whether there are difference
+between your results and the one attained with the five-point algorithm. Why?
+3) Reconstruction and visualization (2 pts)
+Factorize the essential matrix using the OpenCV library to obtain the relative pose between the
+cameras.
+Triangulate the corresponding points using the recovered camera poses.
+Provide a visualization of the reconstructed 3D scene (several view of the scenes/3D gif).
+Hint: Reconstruct the corners of the letters and try to recover the curve outlines in 3D to obtain a more
+detailed model.

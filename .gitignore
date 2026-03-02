@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.ipynb_checkpoints/
+calibration.npz
+*.yml
+undistorted/
