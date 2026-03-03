@@ -15,3 +15,7 @@ dist/
 calibration.npz
 *.yml
 undistorted/
+output/
+sift_inliers_best.npz
+fotogreg/
+diagnose_sift.py
