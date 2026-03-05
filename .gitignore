@@ -19,3 +19,5 @@ output/
 sift_inliers_best.npz
 fotogreg/
 diagnose_sift.py
+hw2.py
+Photos/
