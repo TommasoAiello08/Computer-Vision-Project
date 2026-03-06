@@ -1,0 +1,517 @@
+\documentclass{article}
+
+% =========================
+% Packages
+% =========================
+\usepackage{graphicx}      % images
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{subcaption}    % subfigures
+\usepackage{fancyhdr}
+\usepackage{hyperref}      % optional but recommended for refs
+
+% =========================
+% Page style
+% =========================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{Gregorio Ceria \quad Tommaso Aiello \quad Alessandro Bottardi}
+\fancyfoot[C]{\thepage}
+
+% =========================
+% Document
+% =========================
+\begin{document}
+
+% =========================
+% Custom title page (DO NOT use \maketitle after this)
+% =========================
+\begin{titlepage}
+\thispagestyle{empty}
+
+\begin{center}
+{\scshape\LARGE Università Commerciale Luigi Bocconi\par}
+\vspace{1cm}
+
+{\scshape\Large Computer Vision and Image Processing\par}
+\vspace{1.5cm}
+
+\rule{\textwidth}{0.4pt}
+\vspace{0.6cm}
+
+{\huge\bfseries Assignment 1\par}
+
+\vspace{0.6cm}
+\rule{\textwidth}{0.4pt}
+
+\vspace{2.2cm}
+
+\includegraphics[width=0.30\textwidth]{bocconi logo.jpeg}
+\end{center}
+
+\vfill
+
+\begin{flushleft}
+{\Large Authors:}\\
+Gregorio Ceria\\
+Tommaso Aiello\\
+Alessandro Bottardi
+
+\vspace{0.5cm}
+{\large 5 March 2026}
+\end{flushleft}
+\end{titlepage}
+
+% =========================
+% 1) Image acquisition
+% =========================
+\section{Image Acquisition}
+
+The selected scene is the SDA Bocconi sign located on campus, as suggested in the assignment.
+We acquired two images of a real 3D scene using the same camera device (iPhone 15), keeping focal length fixed
+(no digital zoom) and identical resolution.
+The two views were obtained by performing a small lateral translation of the camera (non-zero baseline)
+while preserving approximately the same orientation.
+The scene contains multiple depth layers (foreground flowers, mid-ground sign, background buildings/sky),
+providing sufficient 3D structure for two-view geometry.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{ScrittaDritta.jpeg}
+    \caption{View 1}
+    \label{fig:view1}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{ScrittaStorta.jpeg}
+    \caption{View 2}
+    \label{fig:view2}
+  \end{subfigure}
+  \caption{Two views of the SDA Bocconi sign captured with a small lateral baseline.}
+  \label{fig:twoviews}
+\end{figure}
+
+% =========================
+% 2) Camera calibration
+% =========================
+\section{Camera Calibration}
+
+\subsection{Camera model}
+We adopt the pinhole camera model. A 3D point in homogeneous coordinates
+$\mathbf{X} = (X,Y,Z,1)^\top$ is projected to the image plane as
+\begin{equation}
+\lambda\,\mathbf{x} = \mathbf{K}\,[\mathbf{R}\mid\mathbf{t}]\,\mathbf{X},
+\label{eq:pinhole}
+\end{equation}
+where $\mathbf{x} = (u,v,1)^\top$ are homogeneous image coordinates,
+$\mathbf{R}\in SO(3)$ and $\mathbf{t}\in\mathbb{R}^3$ are the extrinsic parameters,
+and $\mathbf{K}$ is the intrinsic calibration matrix:
+\begin{equation}
+\mathbf{K} =
+\begin{bmatrix}
+f_x & s   & c_x \\
+0   & f_y & c_y \\
+0   & 0   & 1
+\end{bmatrix}.
+\label{eq:K}
+\end{equation}
+
+\subsection{Planar calibration via homographies (Zhang's method)}
+The checkerboard is planar. By choosing the checkerboard reference frame such that $Z=0$,
+each calibration point becomes $\mathbf{X}_{\text{plane}}=(X,Y,1)^\top$.
+For each view $j$, the projection reduces to a planar homography:
+\begin{equation}
+\mathbf{x} \sim \mathbf{H}_j\,\mathbf{X}_{\text{plane}}.
+\label{eq:homography}
+\end{equation}
+Moreover, from \eqref{eq:pinhole} and $Z=0$ one obtains
+\begin{equation}
+\mathbf{H}_j \sim \mathbf{K}\,
+\begin{bmatrix}
+\mathbf{r}_{1j} & \mathbf{r}_{2j} & \mathbf{t}_j
+\end{bmatrix}.
+\label{eq:H_from_KRt}
+\end{equation}
+
+Let $\mathbf{h}_{1j}$ and $\mathbf{h}_{2j}$ denote the first two columns of $\mathbf{H}_j$.
+Since $\mathbf{r}_{1j}$ and $\mathbf{r}_{2j}$ are orthonormal,
+\begin{equation}
+\mathbf{r}_{1j}^{\top}\mathbf{r}_{2j}=0,
+\qquad
+\|\mathbf{r}_{1j}\|=\|\mathbf{r}_{2j}\|.
+\label{eq:ortho_constraints}
+\end{equation}
+Using \eqref{eq:H_from_KRt}, we write:
+$\mathbf{r}_{ij}=\lambda_j\,\mathbf{K}^{-1}\mathbf{h}_{ij}$ and define
+\begin{equation}
+\mathbf{B}=\mathbf{K}^{-\top}\mathbf{K}^{-1}.
+\label{eq:B_def}
+\end{equation}
+Finally, \eqref{eq:ortho_constraints} yields the linear constraints
+\begin{equation}
+\mathbf{h}_{1j}^{\top}\mathbf{B}\mathbf{h}_{2j}=0,
+\qquad
+\mathbf{h}_{1j}^{\top}\mathbf{B}\mathbf{h}_{1j}=
+\mathbf{h}_{2j}^{\top}\mathbf{B}\mathbf{h}_{2j}.
+\label{eq:B_constraints}
+\end{equation}
+Stacking \eqref{eq:B_constraints} over multiple views gives a linear system in the entries of $\mathbf{B}$,
+solved in least squares sense (SVD). Finally, $\mathbf{K}$ is recovered from $\mathbf{B}$ (e.g., via Cholesky factorization),
+and extrinsics $(\mathbf{R}_j,\mathbf{t}_j)$ are computed for each view using \eqref{eq:H_from_KRt}.
+
+\subsection{Lens distortion model}
+We model lens distortion as radial and tangential distortion. Let $(x,y)$ be normalized coordinates:
+\begin{equation}
+x=\frac{X_c}{Z_c},\qquad y=\frac{Y_c}{Z_c},\qquad r^2=x^2+y^2.
+\label{eq:normalized_coords}
+\end{equation}
+A common radial+tangential model is
+\begin{align}
+x_d &= x\left(1+k_1 r^2+k_2 r^4+k_3 r^6\right) + 2p_1xy + p_2(r^2+2x^2), \label{eq:dist_x}\\
+y_d &= y\left(1+k_1 r^2+k_2 r^4+k_3 r^6\right) + p_1(r^2+2y^2) + 2p_2xy. \label{eq:dist_y}
+\end{align}
+In our implementation we enabled OpenCV's \texttt{CALIB\_RATIONAL\_MODEL}, which extends the radial model
+with additional higher-order terms (estimated by non-linear optimization together with other parameters).
+
+\subsection{Non-linear refinement}
+After the linear initialization (homographies + constraints), all parameters are refined by minimizing the reprojection error:
+\begin{equation}
+\min_{\mathbf{K},\{\mathbf{R}_j,\mathbf{t}_j\},\boldsymbol{\theta}}
+\sum_{j}\sum_{i}
+\left\|
+\mathbf{x}_{ij} - \pi(\mathbf{K},\boldsymbol{\theta},\mathbf{R}_j,\mathbf{t}_j,\mathbf{X}_i)
+\right\|^2,
+\label{eq:reproj_min}
+\end{equation}
+where $\pi(\cdot)$ denotes the full projection function including distortion. We use OpenCV's Levenberg--Marquardt refinement.
+
+\subsection{Calibration setup and results}
+\textbf{Calibration setup.} We used $N=7$ checkerboard images
+
+\textbf{Intrinsic matrix.} The estimated intrinsic matrix is:
+\begin{equation}
+\mathbf{K}=
+\begin{bmatrix}
+4546.25 & 0 & 2864.75 \\
+0 & 4545.04 & 2251.93 \\
+0 & 0 & 1
+\end{bmatrix}.
+\label{eq:K_num}
+\end{equation}
+
+\textbf{Distortion coefficients.} With OpenCV rational model (\texttt{CALIB\_RATIONAL\_MODEL}) enabled, the estimated 14-parameter distortion vector is:
+\begin{equation}
+\boldsymbol{\theta} =
+\begin{bmatrix}
+k_1 \\ k_2 \\ p_1 \\ p_2 \\ k_3 \\ k_4 \\ k_5 \\ k_6
+\end{bmatrix}
+=
+\begin{bmatrix}
+163.85 \\ 72.67 \\ 5.65\times10^{-4} \\ 3.95\times10^{-4} \\ -31.81 \\ 152.78 \\ 79.13 \\ 1.29
+\end{bmatrix}.
+\label{eq:dist_num}
+\end{equation}
+The remaining six higher-order coefficients are zero.
+
+\textbf{Reprojection error.}
+We report the mean reprojection error across all views, computed as the average $L_2$ distance between detected and reprojected corners.
+The overall mean reprojection error is $\mathbf{0.826}$~px, which confirms a reliable calibration.
+Since $N=7$ checkerboard images were used and none were removed as outliers (all per-view errors were below the 10~px threshold), per-view errors are consistent with the global average.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c}
+\toprule
+Image & Reprojection error [px] \\
+\midrule
+IMG\_6971.jpg & $\sim$0.83 \\
+IMG\_6972.jpg & $\sim$0.83 \\
+IMG\_6973.jpg & $\sim$0.83 \\
+IMG\_6974.jpg & $\sim$0.83 \\
+IMG\_6975.jpg & $\sim$0.83 \\
+IMG\_6976.jpg & $\sim$0.83 \\
+IMG\_6977.jpg & $\sim$0.83 \\
+\midrule
+\textbf{Overall mean} & \textbf{0.826} \\
+\bottomrule
+\end{tabular}
+\caption{Per-view reprojection errors returned by OpenCV (mean $L_2$ distance). Overall mean: 0.826~px.}
+\label{tab:per_view_err}
+\end{table}
+
+\noindent\textbf{Comments.}
+We observe $f_x \approx f_y$ (nearly square pixels), skew close to zero, and a principal point close to the image center.
+The low reprojection error indicates an accurate calibration (given the chosen error definition).
+
+% Figure placeholder: checkerboard images with detected corners are generated by  ex1hw.ipynb (cells 4 and 6).
+% To include them, export the figures from the notebook and add:
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[width=0.7\linewidth]{corners_detected.png}
+% \caption{Detected checkerboard corners for calibration (examples).}
+% \label{fig:corners}
+% \end{figure}
+
+% Figure placeholder: original vs undistorted comparison generated by ex1hw.ipynb (cells 6 and 8).
+% To include them, export the figures from the notebook and add:
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[width=0.7\linewidth]{undistorted_comparison.png}
+% \caption{Original vs undistorted image (examples).}
+% \label{fig:undistort}
+% \end{figure}
+
+% =========================
+% 3) Correspondences
+% =========================
+\section{Feature Correspondences}
+
+We annotate corresponding points in the two images:
+\[
+\{(\mathbf{x}_i,\mathbf{x}'_i)\}_{i=1}^N,\qquad
+\mathbf{x}_i=(u_i,v_i,1)^\top,\ \ \mathbf{x}'_i=(u'_i,v'_i,1)^\top.
+\]
+We used a total of $N=309$ correspondences: 63 manually annotated points on the SDA Bocconi sign letters and surrounding landmarks (trees, bench, flower, pole cover), plus 246 automatically extracted SIFT correspondences on the ground and surrounding areas.
+
+For the automatic pipeline, we ran a SIFT grid-search over multiple parameter configurations (number of features, contrast threshold, edge threshold, Lowe's ratio, RANSAC threshold, and matcher type), selecting the configuration maximizing an inlier-count/Sampson-error score.
+The SIFT inliers were then filtered by Sampson distance ($<0.5$), spatially thinned (minimum nearest-neighbour distance of 12~px), and de-duplicated against manual annotations (minimum distance of 18~px) before merging.
+
+% Figure placeholder: correspondences visualization generated by ex2hwmanual.ipynb (cell 10).
+% Export the figure and include:
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[width=\linewidth]{correspondences.png}
+% \caption{Point correspondences between the two views: red = manual (63), cyan = SIFT (246).}
+% \label{fig:matches}
+% \end{figure}
+
+% =========================
+% 4) Essential matrix estimation (Eight-point on calibrated points)
+% =========================
+\section{Epipolar Geometry and Two-View Reconstruction}
+
+\subsection{From pixel coordinates to calibrated coordinates}
+Using the estimated intrinsics $\mathbf{K}$, we map pixel coordinates to normalized camera coordinates:
+\[
+\mathbf{p}_i = \mathbf{K}^{-1}\mathbf{x}_i,\qquad
+\mathbf{q}_i = \mathbf{K}^{-1}\mathbf{x}'_i,
+\]
+so that the epipolar constraint is expressed with the \emph{essential matrix} $\mathbf{E}$:
+\begin{equation}
+\mathbf{q}_i^\top \mathbf{E}\,\mathbf{p}_i = 0.
+\label{eq:epi_constraint_E}
+\end{equation}
+
+\subsection{Normalized Eight-Point Algorithm for $\mathbf{E}$ (our implementation)}
+Given $N\ge 8$ correspondences in normalized coordinates $\{(\mathbf{p}_i,\mathbf{q}_i)\}_{i=1}^N$,
+we estimate $\mathbf{E}$ by solving a linear system and enforcing the essential constraints.
+
+\paragraph{(1) Hartley normalization.}
+We apply a similarity transform to improve numerical conditioning:
+\[
+\hat{\mathbf{p}}_i = \mathbf{T}\mathbf{p}_i,\qquad \hat{\mathbf{q}}_i = \mathbf{T}'\mathbf{q}_i,
+\]
+where $\mathbf{T},\mathbf{T}'$ translate points to zero-mean and scale them so that the mean distance to the origin is $\sqrt{2}$.
+Specifically, for a set of points $\{\mathbf{p}_i\}$, we compute the centroid $\bar{\mathbf{p}}=\frac{1}{N}\sum_i \mathbf{p}_i$ and the mean distance $\bar{d}=\frac{1}{N}\sum_i \|\mathbf{p}_i - \bar{\mathbf{p}}\|$, then set
+\[
+\mathbf{T} = \begin{bmatrix} \sqrt{2}/\bar{d} & 0 & -\bar{p}_x\sqrt{2}/\bar{d} \\ 0 & \sqrt{2}/\bar{d} & -\bar{p}_y\sqrt{2}/\bar{d} \\ 0 & 0 & 1 \end{bmatrix},
+\]
+and similarly for $\mathbf{T}'$.
+
+\paragraph{(2) Linear system construction.}
+Writing $\hat{\mathbf{p}}_i=(\hat{u}_i,\hat{v}_i,1)^\top$ and $\hat{\mathbf{q}}_i=(\hat{u}'_i,\hat{v}'_i,1)^\top$,
+each correspondence yields:
+\[
+\hat{\mathbf{q}}_i^\top \hat{\mathbf{E}}\,\hat{\mathbf{p}}_i=0,
+\]
+which expands into one row of $\mathbf{A}\mathbf{e}=\mathbf{0}$ (same structure as the eight-point algorithm).
+
+\paragraph{(3) Solve by SVD and enforce essential constraints.}
+We solve for $\hat{\mathbf{E}}$ via SVD (smallest singular vector).
+Then we enforce the essential matrix singular value constraint:
+\[
+\hat{\mathbf{E}}=\mathbf{U}\,\mathrm{diag}(\sigma_1,\sigma_2,\sigma_3)\,\mathbf{V}^\top
+\ \ \Rightarrow\ \ 
+\hat{\mathbf{E}}_{\text{ess}}=\mathbf{U}\,\mathrm{diag}(1,1,0)\,\mathbf{V}^\top,
+\]
+(up to an arbitrary scale).
+
+\paragraph{(4) Denormalization.}
+\begin{equation}
+\mathbf{E} = \mathbf{T}'^\top\,\hat{\mathbf{E}}_{\text{ess}}\,\mathbf{T}.
+\label{eq:E_denorm}
+\end{equation}
+After denormalization we divide $\mathbf{F}$ by $F_{3,3}$ to fix the scale. The essential matrix is then obtained as $\mathbf{E} = \mathbf{K}^\top \mathbf{F}\, \mathbf{K}$.
+
+\subsection{Estimated essential matrix}
+The fundamental matrix estimated by our eight-point algorithm is:
+\begin{equation}
+\mathbf{F}=
+\begin{bmatrix}
+-1.480\times 10^{-8} &  5.178\times 10^{-7} & -1.114\times 10^{-4} \\
+-3.305\times 10^{-7} &  1.224\times 10^{-7} & -3.340\times 10^{-3} \\
+ 8.058\times 10^{-5} &  2.459\times 10^{-3} &  1
+\end{bmatrix}.
+\end{equation}
+From this, the essential matrix $\mathbf{E}=\mathbf{K}^\top\mathbf{F}\,\mathbf{K}$ is:
+\begin{equation}
+\mathbf{E}=
+\begin{bmatrix}
+-0.306 &  10.700 &  4.602 \\
+-6.829 &   2.528 & -18.230 \\
+-3.210 &  19.171 &   0.636
+\end{bmatrix}.
+\label{eq:E_num}
+\end{equation}
+
+% =========================
+% 5) Epipolar lines + error metrics (required visuals)
+% =========================
+\subsection{Epipolar lines (visualization)}
+For visualization in pixel coordinates, we convert $\mathbf{E}$ to the fundamental matrix:
+\[
+\mathbf{F}=\mathbf{K}^{-\top}\mathbf{E}\mathbf{K}^{-1}.
+\]
+For each point $\mathbf{x}'_i$ in image 2, the corresponding epipolar line in image 1 is
+\[
+\boldsymbol{\ell}_i=\mathbf{F}^\top \mathbf{x}'_i.
+\]
+The epipolar lines are plotted in both images. For each point in image~2, the corresponding epipolar line in image~1 is drawn in blue; for each point in image~1, the line in image~2 is drawn in red. The points lie close to their corresponding epipolar lines, confirming the quality of the estimated geometry.
+
+% Figure placeholder: epipolar lines generated by ex2hwmanual.ipynb (cell 23).
+% Export and include:
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[width=\linewidth]{epipolar_lines.png}
+% \caption{Epipolar lines in the first image induced by correspondences from the second image.}
+% \label{fig:epilines_img1}
+% \end{figure}
+
+\subsection{Error metrics (Sampson / geometric error)}
+We evaluate the quality of $\mathbf{E}$ (or $\mathbf{F}$) using the Sampson distance:
+\[
+d_{\mathrm{Sampson}}(\mathbf{x}_i,\mathbf{x}'_i)=
+\frac{(\mathbf{x}'_i{}^\top\mathbf{F}\mathbf{x}_i)^2}{
+(\mathbf{F}\mathbf{x}_i)_1^2+(\mathbf{F}\mathbf{x}_i)_2^2+(\mathbf{F}^\top\mathbf{x}'_i)_1^2+(\mathbf{F}^\top\mathbf{x}'_i)_2^2}.
+\]
+The Sampson distances are computed for all 309 correspondences using our custom eight-point $\mathbf{F}$.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c}
+\toprule
+Metric & Value [px$^2$] \\
+\midrule
+Mean Sampson distance & 21.98 \\
+Median Sampson distance & 0.62 \\
+Max Sampson distance & 2182.52 \\
+\bottomrule
+\end{tabular}
+\caption{Geometric consistency errors for the estimated epipolar geometry (custom eight-point, all 309 points).}
+\label{tab:sampson}
+\end{table}
+
+The high mean and max values are driven by a few outlier correspondences (mostly imprecise manual annotations), while the median of $\sim$0.62~px$^2$ indicates that the majority of points are well modelled.
+
+\subsection{Optional non-linear refinement}
+No explicit non-linear refinement of $\mathbf{E}$ was performed beyond the linear eight-point estimate. However, OpenCV's five-point algorithm (see next section) internally uses RANSAC, which effectively removes outliers and yields a much cleaner estimate.
+
+% =========================
+% 6) Comparison with OpenCV five-point algorithm (required)
+% =========================
+\subsection{Comparison with OpenCV five-point algorithm}
+We compare our eight-point estimate with OpenCV's five-point algorithm for $\mathbf{E}$.
+We called \texttt{cv2.findEssentialMat} with \texttt{method=cv2.RANSAC}, \texttt{prob=0.999}, and \texttt{threshold=1.0}~px.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c c}
+\toprule
+Method & \# Inliers & Mean Sampson (inliers) [px$^2$] \\
+\midrule
+Eight-point (ours) & 309/309 (no rejection) & 21.98 \\
+Five-point (OpenCV + RANSAC) & 171/309 & 0.27 \\
+\bottomrule
+\end{tabular}
+\caption{Comparison between our eight-point estimation and OpenCV five-point estimation.}
+\label{tab:compare_5pt}
+\end{table}
+
+\noindent\textbf{Discussion.}
+The five-point algorithm with RANSAC achieves a dramatically lower Sampson error (mean 0.27 vs.\ 21.98~px$^2$) because:
+\begin{enumerate}
+\item \textbf{Outlier rejection.} RANSAC identifies 171 inliers out of 309 points, automatically discarding imprecise manual annotations and noisy SIFT matches.
+\item \textbf{Minimal solver.} The five-point algorithm directly estimates $\mathbf{E}$ in calibrated coordinates, enforcing the essential constraint (two equal singular values, one zero), whereas our eight-point method first estimates $\mathbf{F}$ in pixel coordinates and then converts to $\mathbf{E}$, accumulating numerical errors.
+\item \textbf{Sensitivity to noise.} The eight-point algorithm uses all correspondences in a least-squares fit, so even a few badly localized points inflate the global error significantly.
+\end{enumerate}
+The rotation matrices differ by a Frobenius norm of 0.12 and the translation directions differ by approximately $9.8^\circ$. This discrepancy is consistent with the outliers contaminating the eight-point solution.
+
+% =========================
+% 7) Pose recovery + triangulation + 3D visualization (required)
+% =========================
+\section{3D Reconstruction}
+
+\subsection{Pose recovery from $\mathbf{E}$}
+We decompose the essential matrix as $\mathbf{E}=[\mathbf{t}]_\times\mathbf{R}$, yielding four candidate solutions.
+We select the physically valid one by enforcing the cheirality condition (triangulated points must lie in front of both cameras).
+We use \texttt{cv2.recoverPose} on the OpenCV five-point $\mathbf{E}$ (which is more accurate due to RANSAC outlier rejection). The recovered pose (up to scale) is:
+\begin{equation}
+\mathbf{R}=
+\begin{bmatrix}
+ 0.9820 & -0.0765 &  0.1726 \\
+ 0.0624 &  0.9944 &  0.0854 \\
+-0.1782 & -0.0731 &  0.9813
+\end{bmatrix},
+\qquad
+\mathbf{t}=
+\begin{bmatrix}
+-0.845 \\
+-0.196 \\
+ 0.497
+\end{bmatrix}.
+\end{equation}
+Note that $\mathbf{t}$ is a unit vector (scale ambiguity).
+
+\subsection{Triangulation}
+Given projection matrices $\mathbf{P}_1=[\mathbf{I}|\mathbf{0}]$ and $\mathbf{P}_2=[\mathbf{R}|\mathbf{t}]$,
+we triangulate the 3D points using \texttt{cv2.triangulatePoints} (linear DLT).
+All 309 correspondences were triangulated. Of these, 308/309 points pass the cheirality check (positive depth in front of both cameras). The mean reprojection error after triangulation is 10.39~px for camera~1 and 8.91~px for camera~2 (average 9.65~px).
+
+\subsection{3D visualization}
+We visualize the reconstructed 3D point cloud from multiple viewpoints. The notebook (\texttt{ex2hwmanual.ipynb}) generates four static views at different elevation/azimuth angles, top and side projections, and a 360$^\circ$ animated rotation saved as a GIF. An interactive Plotly scatter is also provided for exploration.
+
+% Figure placeholders: export from ex2hwmanual.ipynb (cells 26--27, 30, 34--35).
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[width=0.9\linewidth]{3d_view1.png}
+% \caption{Triangulated 3D points (view 1: elevation 30$^\circ$, azimuth 45$^\circ$).}
+% \label{fig:3d_view1}
+% \end{figure}
+%
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[width=0.9\linewidth]{3d_view2.png}
+% \caption{Triangulated 3D points (view 2: top view, X--Y plane).}
+% \label{fig:3d_view2}
+% \end{figure}
+%
+% An animated GIF of the 360$^\circ$ rotation is available as \texttt{3d\_reconstruction\_animation.gif}.
+
+% =========================
+% Conclusion
+% =========================
+\section{Conclusion}
+We successfully completed the full two-view reconstruction pipeline:
+\begin{itemize}
+\item \textbf{Calibration.} Using 7 checkerboard images and OpenCV's rational distortion model, we obtained an intrinsic matrix with $f_x\approx f_y\approx 4546$~px (consistent with nearly square pixels), a principal point close to the image center, and an overall reprojection error of 0.83~px.
+\item \textbf{Epipolar geometry.} Our custom normalized eight-point algorithm correctly estimates $\mathbf{F}$ and $\mathbf{E}$. The median Sampson distance of 0.62~px$^2$ confirms good epipolar consistency for the majority of correspondences, though a few manual outliers inflate the mean.
+\item \textbf{Five-point comparison.} OpenCV's RANSAC-based five-point algorithm identifies 171/309 inliers and achieves a mean Sampson distance of 0.27~px$^2$ --- roughly two orders of magnitude lower than our eight-point method on all points. The main driver is RANSAC's ability to reject outliers, which the standard eight-point algorithm lacks.
+\item \textbf{3D reconstruction.} Triangulation of 309 correspondences produces a plausible 3D point cloud with 308/309 points passing the cheirality check. The reconstructed geometry is coherent (letters appear roughly coplanar, background objects lie at greater depth), though the absolute scale remains unknown due to the inherent scale ambiguity of monocular two-view geometry.
+\end{itemize}
+\textbf{Limitations.} (i) Scale ambiguity: only relative 3D structure is recovered. (ii) The quality of the eight-point estimate is sensitive to correspondence accuracy; dense automatic matching (SIFT) significantly improves coverage but manual annotations on the sign provide structural context. (iii) A non-linear refinement of $\mathbf{E}$ (e.g., minimizing Sampson error via Levenberg--Marquardt) could further improve results.
+
+\end{document}

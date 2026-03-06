@@ -20,4 +20,7 @@ sift_inliers_best.npz
 fotogreg/
 diagnose_sift.py
 hw2.py
+_compare_metrics.py
+_report_data.py
+ImplementationSIFT2.py
 Photos/
