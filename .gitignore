@@ -24,3 +24,11 @@ _compare_metrics.py
 _report_data.py
 ImplementationSIFT2.py
 Photos/
+Report.tex
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
